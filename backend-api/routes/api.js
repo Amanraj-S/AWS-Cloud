@@ -5,23 +5,42 @@ const router = express.Router()
 
 router.get("/", (req, res) => {
   try {
-    // Grab the name of the AWS EC2 instance (or your local PC name)
-    const serverName = os.hostname()
 
-    // Instantly send the response back to the React frontend
+    // Hostname of EC2 instance
+    const hostname = os.hostname()
+
+    // Network interfaces (to extract private IP)
+    const networkInterfaces = os.networkInterfaces()
+
+    let privateIP = "Unknown"
+
+    for (const iface of Object.values(networkInterfaces)) {
+      for (const net of iface) {
+        if (net.family === "IPv4" && !net.internal) {
+          privateIP = net.address
+          break
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
-      message: "200 OK", 
-      server: serverName,
-      time: new Date()
+      message: "Response from AWS Server",
+      server: hostname,
+      privateIP: privateIP,
+      platform: os.platform(),
+      uptime: os.uptime(),
+      time: new Date().toISOString()
     })
 
   } catch (error) {
+
     console.error("API Error:", error)
 
     res.status(500).json({
       success: false,
-      message: "Server Error"
+      message: "Server Error",
+      error: error.message
     })
   }
 })
