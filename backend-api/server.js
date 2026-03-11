@@ -1,64 +1,60 @@
-const express = require("express")
-const cors = require("cors")
-const os = require("os")
-require("dotenv").config()
+const express = require("express");
+const cors = require("cors");
+const os = require("os");
+require("dotenv").config();
 
-const connectDB = require("./config/db")
-const RequestLog = require("./models/RequestLog")
+const app = express();
 
-const app = express()
-
+// ------------------------------
 // Middleware
-app.use(cors())
-app.use(express.json())
+// ------------------------------
+app.use(cors());
+app.use(express.json());
 
-// Connect to MongoDB
-connectDB()
+// ------------------------------
+// Health Check Route (Crucial for AWS ALB!)
+// ------------------------------
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
-// Health check route (useful for AWS ALB)
+// Optional root route
 app.get("/", (req, res) => {
-  res.send("AWS MERN Backend Running")
-})
+  res.status(200).send("AWS MERN Backend Running");
+});
 
-// Main API
-app.get("/api", async (req, res) => {
-
+// ------------------------------
+// Main API Route
+// ------------------------------
+app.get("/api", (req, res) => {
   try {
+    // Grab the name of the AWS EC2 instance (or local PC name)
+    const serverName = os.hostname();
 
-    const serverName = os.hostname()
-
-    // Save request log
-    await RequestLog.create({
-      server: serverName,
-      time: new Date()
-    })
-
-    // Count total requests
-    const totalRequests = await RequestLog.countDocuments()
-
+    // Instantly respond without waiting for a database
     res.status(200).json({
       success: true,
       message: "Response from AWS Server",
       server: serverName,
-      time: new Date(),
-      totalRequests: totalRequests
-    })
+      time: new Date()
+    });
 
   } catch (error) {
-
-    console.error("API Error:", error)
+    console.error("API Error:", error);
 
     res.status(500).json({
       success: false,
       message: "Internal Server Error"
-    })
-
+    });
   }
+});
 
-})
-
-const PORT = process.env.PORT || 5000
+// ------------------------------
+// Start Server
+// ------------------------------
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Server hostname: ${os.hostname()}`);
+});
