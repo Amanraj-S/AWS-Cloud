@@ -6,16 +6,19 @@ const API = axios.create({
 
 export const getServer = async () => {
   try {
-
-    const response = await API.get("/api")
+    // ?t=${Date.now()} tricks the browser into thinking every loop is a totally different website page
+    const response = await API.get(`/api?t=${Date.now()}`, {
+      headers: {
+        "Connection": "close",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache"
+      }
+    })
 
     return response
 
   } catch (error) {
-
     console.error("API Error:", error)
-
     throw error
-
   }
 }
